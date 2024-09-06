@@ -1,5 +1,7 @@
-from functools import partial
-from typing import Union
-from django.urls.resolvers import URLPattern, URLResolver
+from django.urls import path
+from set import views
 
-urlpatterns: list[partial[Union[URLResolver, URLPattern]]] = []
+
+urlpatterns = [
+    path("bulk/", views.bulk_import)
+]
