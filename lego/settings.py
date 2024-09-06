@@ -7,7 +7,7 @@ environ.Env.read_env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY', "")
 
 DEBUG = env('DEBUG', default=False)
 
@@ -62,11 +62,11 @@ WSGI_APPLICATION = 'lego.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
+        'NAME': env('DB_NAME', ""),
+        'USER': env('DB_USER', ""),
+        'PASSWORD': env('DB_PASSWORD', ""),
+        'HOST': env('DB_HOST', ""),
+        'PORT': env('DB_PORT', ""),
     }
 }
 
