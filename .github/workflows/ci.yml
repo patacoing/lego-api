@@ -29,7 +29,7 @@ jobs:
         python -m pip install mypy
 
     - name: Type checking
-      run: mypy --strict
+      run: mypy ./ --strict
 
     - name: Run commit message linter
       uses: wagoid/commitlint-github-action@v6
