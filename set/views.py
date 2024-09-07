@@ -38,6 +38,6 @@ def bulk_import(request: Request) -> HttpResponse:
     try:
         Set.objects.bulk_create(sets)
     except IntegrityError:
-        return HttpResponseBadRequest("Set already exists")
+        return HttpResponseBadRequest("Set already exists or Theme provided doesn't exist")
 
     return HttpResponse("Successfully imported")
