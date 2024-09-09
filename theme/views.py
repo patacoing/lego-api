@@ -53,30 +53,30 @@ def bulk_import(request: Request) -> HttpResponse:
 
 class ThemeListView(APIView):
     @staticmethod
-    def get(request: Request) -> HttpResponse:
+    def get(request: Request) -> Response:
         themes  = Theme.objects.all()
         paginator = LimitOffsetPagination()
         result_page = paginator.paginate_queryset(themes, request)
 
         serializer = ThemeSerializer(result_page, many=True)
 
-        return HttpResponse(serializer.data)
+        return Response(serializer.data)
 
     @staticmethod
-    def post(request: Request) -> HttpResponse:
+    def post(request: Request) -> Response:
         serializer = CreateThemeSerializer(data=request.data)
 
         if not serializer.is_valid():
-            return HttpResponseBadRequest(serializer.errors)
+            raise BadRequest(serializer.errors)
 
         theme = serializer.save()
 
         try:
             theme.save()
         except IntegrityError:
-            return HttpResponseBadRequest("Prent theme doesn't exist")
+            raise BadRequest("Parent theme doesn't exist")
 
-        return HttpResponse(ThemeSerializer(theme).data)
+        return Response(ThemeSerializer(theme).data)
 
 
 class ThemeDetailView(APIView):
