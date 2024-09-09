@@ -1,8 +1,9 @@
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import IntegrityError
 from django.http import HttpResponseBadRequest, HttpResponse, HttpResponseNotFound, HttpResponseGone
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser
 import pandas as pd
@@ -59,7 +60,7 @@ class ThemeListView(APIView):
 
         serializer = ThemeSerializer(result_page, many=True)
 
-        return Response(serializer.data)
+        return HttpResponse(serializer.data)
 
     @staticmethod
     def post(request: Request) -> HttpResponse:
@@ -75,49 +76,49 @@ class ThemeListView(APIView):
         except IntegrityError:
             return HttpResponseBadRequest("Prent theme doesn't exist")
 
-        return Response(ThemeSerializer(theme).data)
+        return HttpResponse(ThemeSerializer(theme).data)
 
 
 class ThemeDetailView(APIView):
     @staticmethod
-    def get(request: Request, pk: int) -> HttpResponse:
+    def get(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return HttpResponseNotFound()
+            raise NotFound()
 
         serializer = ThemeSerializer(theme)
 
         return Response(serializer.data)
 
     @staticmethod
-    def delete(request: Request, pk: int) -> HttpResponse:
+    def delete(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return HttpResponseNotFound()
+            raise NotFound()
 
         theme.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
-    def patch(request: Request, pk: int) -> HttpResponse:
+    def patch(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return HttpResponseNotFound()
+            raise NotFound()
 
         serializer = UpdateThemeSerializer(theme, data=request.data)
 
         if not serializer.is_valid():
-            return HttpResponseBadRequest(serializer.errors)
+            raise BadRequest(serializer.errors)
 
         theme = serializer.save()
 
         try:
             theme.save()
         except IntegrityError:
-            return HttpResponseBadRequest("Theme doesn't exist")
+            raise BadRequest("Theme doesn't exist")
 
         return Response(ThemeSerializer(theme).data)
