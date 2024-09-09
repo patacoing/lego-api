@@ -1,5 +1,4 @@
 from typing import Union
-
 from rest_framework import serializers
 
 from theme.models import Theme
