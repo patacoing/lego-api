@@ -7,8 +7,20 @@ The data model used is build upon the lego dataset : https://rebrickable.com/dow
 
 #  Endpoints : 
 
-- POST /api/themes/bulk => import themes from a csv file into the database
-- POST /api/sets/bulk => import sets from a csv file into the database
+- Themes
+  - POST /api/themes/bulk => import themes from a csv file into the database
+  - GET /api/themes/
+  - GET /api/themes/<id>
+  - POST /api/themes/
+  - DELETE /api/themes/<id>
+  - PATCH /api/themes/<id>
+- Sets
+  - POST /api/sets/bulk => import sets from a csv file into the database
+  - GET /api/sets/
+  - GET /api/sets/<id>
+  - POST /api/sets/
+  - DELETE /api/sets/<id>
+  - PATCH /api/sets/<id>
 
 # Installation : 
 
