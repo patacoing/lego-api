@@ -118,6 +118,6 @@ class SetDetailView(APIView):
         try:
             set_object.save()
         except IntegrityError:
-            raise BadRequest("Theme doesn't exist")
+            raise BadRequest("Theme doesn't exist or num is already in the db")
 
         return Response(SetSerializer(set_object).data)
