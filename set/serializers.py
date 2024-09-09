@@ -36,6 +36,10 @@ class UpdateSetSerializer(serializers.Serializer):
 
     def update(self, instance: Set, validated_data: dict[str, Union[str, int]]) -> Set:
         instance.name = validated_data.get('name', instance.name)
-        instance.parent_id = validated_data.get('parent_id', instance.parent_id)
+        instance.year = validated_data.get('year', instance.year)
+        instance.num_parts = validated_data.get('num_parts', instance.num_parts)
+        instance.img_url = validated_data.get('img_url', instance.img_url)
+        instance.num = validated_data.get('num', instance.num)
+        instance.theme_id = validated_data.get('theme_id', instance.theme_id)
 
         return instance
