@@ -1,3 +1,9 @@
+## 0.3.0 (2024-09-10)
+
+### Feat
+
+- changed SECRET_KEY default value
+
 ## 0.2.0 (2024-09-10)
 
 ### Feat
