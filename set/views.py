@@ -3,9 +3,10 @@ from django.db import IntegrityError
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, serializers
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,7 +23,7 @@ from .serializers import SetSerializer, CreateSetSerializer, UpdateSetSerializer
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-
+@permission_classes([IsAuthenticated])
 def bulk_import(request: Request) -> Response:
     serializer = FileUploadSerializer(data=request.data)
 
@@ -55,6 +56,8 @@ def bulk_import(request: Request) -> Response:
 
 
 class SetListView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @staticmethod
     @extend_schema(
         parameters=[
@@ -97,6 +100,8 @@ class SetListView(APIView):
 
 
 class SetDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     @staticmethod
     @extend_schema(
         responses={status.HTTP_202_ACCEPTED: SetSerializer},
