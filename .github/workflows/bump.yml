@@ -28,4 +28,4 @@ jobs:
           github_token: ${{ secrets.TOKEN }}
 
       - name: Print version
-        run: echo "Bumped to version ${{ steps.cz.outputs.version }}
+        run: echo "Bumped to version ${{ steps.cz.outputs.version }}"
