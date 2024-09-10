@@ -27,10 +27,15 @@ INSTALLED_APPS = [
     'theme',
     'set',
     'drf_spectacular',
+    'rest_framework_simplejwt',
+    'user',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -96,6 +101,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTH_USER_MODEL = "user.UserProfile"
 
 LANGUAGE_CODE = 'en-us'
 
