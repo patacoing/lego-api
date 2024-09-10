@@ -1,4 +1,6 @@
 from typing import Union
+import pandas as pd
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
 
 from set.models import Set
@@ -43,3 +45,17 @@ class UpdateSetSerializer(serializers.Serializer):
         instance.theme_id = validated_data.get('theme_id', instance.theme_id)
 
         return instance
+
+
+class FileUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
+
+    def create(self, validated_data: dict[str, InMemoryUploadedFile]) -> pd.DataFrame:
+        file = validated_data["file"]
+
+        df = pd.read_csv(file)
+
+        if not {"set_num", "year", "name", "theme_id", "num_parts", "img_url"}.issubset(df.columns):
+            raise serializers.ValidationError("Columns must contain id, parent_id and name")
+
+        return df

@@ -1,34 +1,38 @@
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import IntegrityError
-from django.http import HttpResponseBadRequest, HttpResponse
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework import status, serializers
 from rest_framework.decorators import api_view, parser_classes
-from rest_framework.exceptions import NotFound
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser
-import pandas as pd
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from utils.responses import ResponseNotFound, ResponseBadRequest
 from .models import Set
-from .serializers import SetSerializer, CreateSetSerializer, UpdateSetSerializer
+from .serializers import SetSerializer, CreateSetSerializer, UpdateSetSerializer, FileUploadSerializer
 
 
+@extend_schema(
+    request=FileUploadSerializer,
+    responses={status.HTTP_200_OK: None},
+    summary="Bulk import"
+)
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-def bulk_import(request: Request) -> HttpResponse:
-    files = [uploaded_file.file for uploaded_file in request.FILES.values()]
 
-    if len(files) != 1:
-        return HttpResponseBadRequest("Need only 1 file")
+def bulk_import(request: Request) -> Response:
+    serializer = FileUploadSerializer(data=request.data)
 
-    file, = files
+    if not serializer.is_valid():
+        return ResponseBadRequest(serializer.errors)
 
-    df = pd.read_csv(file)
-
-    if not {"set_num", "year", "name", "theme_id", "num_parts", "img_url"}.issubset(df.columns):
-        return HttpResponseBadRequest("Columns must contain id, parent_id and name")
+    try:
+        df = serializer.save()
+    except serializers.ValidationError as e:
+        return ResponseBadRequest(e.detail)
 
     sets = [
         Set(
@@ -45,13 +49,22 @@ def bulk_import(request: Request) -> HttpResponse:
     try:
         Set.objects.bulk_create(sets)
     except IntegrityError:
-        return HttpResponseBadRequest("Set already exists or Theme provided doesn't exist")
+        return ResponseBadRequest("Set already exists or Theme provided doesn't exist")
 
-    return HttpResponse("Successfully imported")
+    return Response()
 
 
 class SetListView(APIView):
     @staticmethod
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="limit", location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, default=10),
+            OpenApiParameter(name="offset", location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, default=0),
+        ],
+        responses={status.HTTP_202_ACCEPTED: SetSerializer},
+        operation_id="getPaginatedSets",
+        summary="Get paginated sets"
+    )
     def get(request: Request) -> Response:
         sets  = Set.objects.all()
         paginator = LimitOffsetPagination()
@@ -62,62 +75,81 @@ class SetListView(APIView):
         return Response(serializer.data)
 
     @staticmethod
+    @extend_schema(
+        request=CreateSetSerializer,
+        responses={status.HTTP_201_CREATED: SetSerializer},
+        summary="Create a set"
+    )
     def post(request: Request) -> Response:
         serializer = CreateSetSerializer(data=request.data)
 
         if not serializer.is_valid():
-            raise BadRequest(serializer.errors)
+            return ResponseBadRequest(serializer.errors)
 
         set_object = serializer.save()
 
         try:
             set_object.save()
         except IntegrityError:
-            raise BadRequest("Theme doesn't exist or Num is already in the db")
+            return ResponseBadRequest("Theme doesn't exist or Num is already in the db")
 
         return Response(SetSerializer(set_object).data)
 
 
 class SetDetailView(APIView):
     @staticmethod
+    @extend_schema(
+        responses={status.HTTP_202_ACCEPTED: SetSerializer},
+        operation_id="getSetById",
+        summary="Get a set"
+    )
     def get(request: Request, pk: int) -> Response:
         try:
             set_object = Set.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseBadRequest("Set does not exist")
 
         serializer = SetSerializer(set_object)
 
         return Response(serializer.data)
 
     @staticmethod
+    @extend_schema(
+        responses={status.HTTP_204_NO_CONTENT: None},
+        summary="Delete a set"
+    )
     def delete(request: Request, pk: int) -> Response:
         try:
             set_object = Set.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseBadRequest("Set does not exist")
 
         set_object.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
+    @extend_schema(
+        request=UpdateSetSerializer,
+        responses={status.HTTP_202_ACCEPTED: SetSerializer},
+        summary="Update a set"
+    )
     def patch(request: Request, pk: int) -> Response:
         try:
             set_object = Set.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseNotFound("Set does not exist")
 
         serializer = UpdateSetSerializer(set_object, data=request.data)
 
         if not serializer.is_valid():
-            raise BadRequest(serializer.errors)
+            return ResponseBadRequest(serializer.errors)
 
         set_object = serializer.save()
 
         try:
             set_object.save()
         except IntegrityError:
-            raise BadRequest("Theme doesn't exist or num is already in the db")
+            return ResponseBadRequest("Theme doesn't exist or num is already in the db")
 
         return Response(SetSerializer(set_object).data)

@@ -1,9 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.db import IntegrityError
-from django.http import HttpResponseBadRequest, HttpResponse, HttpResponseNotFound, HttpResponseGone
-from rest_framework import status
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework import status, serializers
 from rest_framework.decorators import api_view, parser_classes
-from rest_framework.exceptions import NotFound
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser
 import pandas as pd
@@ -13,23 +13,27 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from theme.models import Theme
-from theme.serializers import ThemeSerializer, CreateThemeSerializer, UpdateThemeSerializer
+from theme.serializers import ThemeSerializer, CreateThemeSerializer, UpdateThemeSerializer, FileUploadSerializer
+from utils.responses import ResponseNotFound, ResponseBadRequest
 
 
+@extend_schema(
+    request=FileUploadSerializer,
+    responses={status.HTTP_200_OK: None},
+    summary="Bulk import"
+)
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-def bulk_import(request: Request) -> HttpResponse:
-    files = [uploaded_file.file for uploaded_file in request.FILES.values()]
+def bulk_import(request: Request) -> Response:
+    serializer = FileUploadSerializer(data=request.data)
 
-    if len(files) != 1:
-        return HttpResponseBadRequest("Need only 1 file")
+    if not serializer.is_valid():
+        return ResponseBadRequest(serializer.errors)
 
-    file, = files
-
-    df = pd.read_csv(file)
-
-    if not {"id", "parent_id", "name"}.issubset(df.columns):
-        return HttpResponseBadRequest("Columns must contain id, parent_id and name")
+    try:
+        df = serializer.save()
+    except serializers.ValidationError as e:
+        return ResponseBadRequest(e.detail)
 
     df = df.replace(np.nan, None)
 
@@ -46,13 +50,22 @@ def bulk_import(request: Request) -> HttpResponse:
     try:
         Theme.objects.bulk_create(themes)
     except IntegrityError:
-        return HttpResponseBadRequest("Theme already exists")
+        return ResponseBadRequest("Theme already exists")
 
-    return HttpResponse("Successfully imported")
+    return Response({"detail": "Successfully imported"})
 
 
 class ThemeListView(APIView):
     @staticmethod
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="limit", location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, default=10),
+            OpenApiParameter(name="offset", location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, default=0),
+        ],
+        responses={status.HTTP_202_ACCEPTED: ThemeSerializer},
+        operation_id="getPaginatedThemes",
+        summary="Get paginated themes"
+    )
     def get(request: Request) -> Response:
         themes  = Theme.objects.all()
         paginator = LimitOffsetPagination()
@@ -63,62 +76,81 @@ class ThemeListView(APIView):
         return Response(serializer.data)
 
     @staticmethod
+    @extend_schema(
+        request=CreateThemeSerializer,
+        responses={status.HTTP_201_CREATED: ThemeSerializer},
+        summary="Create a theme"
+    )
     def post(request: Request) -> Response:
         serializer = CreateThemeSerializer(data=request.data)
 
         if not serializer.is_valid():
-            raise BadRequest(serializer.errors)
+            return ResponseBadRequest(serializer.errors)
 
         theme = serializer.save()
 
         try:
             theme.save()
         except IntegrityError:
-            raise BadRequest("Parent theme doesn't exist")
+            return ResponseBadRequest("Parent theme doesn't exist")
 
         return Response(ThemeSerializer(theme).data)
 
 
 class ThemeDetailView(APIView):
     @staticmethod
+    @extend_schema(
+        responses={status.HTTP_202_ACCEPTED: ThemeSerializer},
+        operation_id="getThemeById",
+        summary="Get a theme"
+    )
     def get(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseNotFound("Theme doesn't exist")
 
         serializer = ThemeSerializer(theme)
 
         return Response(serializer.data)
 
     @staticmethod
+    @extend_schema(
+        responses={status.HTTP_204_NO_CONTENT: None},
+        summary="Delete a theme"
+    )
     def delete(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseNotFound("Theme doesn't exist")
 
         theme.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @staticmethod
+    @extend_schema(
+        request=UpdateThemeSerializer,
+        responses={status.HTTP_202_ACCEPTED: ThemeSerializer},
+        summary="Update a theme"
+    )
     def patch(request: Request, pk: int) -> Response:
         try:
             theme = Theme.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise NotFound()
+            return ResponseNotFound("Theme doesn't exist")
 
         serializer = UpdateThemeSerializer(theme, data=request.data)
 
         if not serializer.is_valid():
-            raise BadRequest(serializer.errors)
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
         theme = serializer.save()
 
         try:
             theme.save()
         except IntegrityError:
-            raise BadRequest("Theme doesn't exist")
+            return ResponseBadRequest("Theme doesn't exist")
 
         return Response(ThemeSerializer(theme).data)
