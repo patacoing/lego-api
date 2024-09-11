@@ -1,21 +1,16 @@
-from django.core.exceptions import ObjectDoesNotExist, BadRequest
-from django.db import IntegrityError
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, serializers
 from rest_framework.decorators import api_view, parser_classes, permission_classes
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser
-import numpy as np
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from theme.models import Theme
 from theme.serializers import ThemeSerializer, CreateThemeSerializer, UpdateThemeSerializer, FileUploadSerializer
 from theme.services import ThemeService
-from utils.responses import ResponseNotFound, ResponseBadRequest
+from utils.responses import ResponseBadRequest
 
 
 @extend_schema(
@@ -25,7 +20,7 @@ from utils.responses import ResponseNotFound, ResponseBadRequest
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def bulk_import(request: Request) -> Response:
     serializer = FileUploadSerializer(data=request.data)
 
