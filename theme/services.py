@@ -3,6 +3,7 @@ import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -55,10 +56,7 @@ class ThemeService:
 
     @staticmethod
     def get(pk: int) -> Response:
-        try:
-            theme = Theme.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return ResponseNotFound("Theme doesn't exist")
+        theme = get_object_or_404(Theme, pk=pk)
 
         serializer = ThemeSerializer(theme)
 
@@ -66,10 +64,7 @@ class ThemeService:
 
     @staticmethod
     def delete(pk: int) -> Response:
-        try:
-            theme = Theme.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return ResponseNotFound("Theme doesn't exist")
+        theme = get_object_or_404(Theme, pk=pk)
 
         theme.delete()
 
@@ -77,10 +72,7 @@ class ThemeService:
 
     @staticmethod
     def update(request: Request, pk: int) -> Response:
-        try:
-            theme = Theme.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return ResponseNotFound("Theme doesn't exist")
+        theme = get_object_or_404(Theme, pk=pk)
 
         serializer = UpdateThemeSerializer(theme, data=request.data)
 
