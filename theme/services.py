@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
@@ -10,7 +9,7 @@ from rest_framework.response import Response
 
 from theme.models import Theme
 from theme.serializers import ThemeSerializer, UpdateThemeSerializer
-from utils.responses import ResponseBadRequest, ResponseNotFound
+from utils.responses import ResponseBadRequest
 
 
 class ThemeService:
