@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status, serializers
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AND, IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +20,7 @@ from .services import SetService
 )
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def bulk_import(request: Request) -> Response:
     serializer = FileUploadSerializer(data=request.data)
 
