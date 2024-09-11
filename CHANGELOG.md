@@ -1,3 +1,10 @@
+## 0.3.1 (2024-09-11)
+
+### Refactor
+
+- **theme-service**: use get_object_or_404 to reduce code
+- **theme**: create a theme service to manage logic
+
 ## 0.3.0 (2024-09-10)
 
 ### Feat
