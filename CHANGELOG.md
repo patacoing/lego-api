@@ -1,3 +1,9 @@
+## 0.4.0 (2024-09-11)
+
+### Feat
+
+- moved logic to a set service
+
 ## 0.3.2 (2024-09-11)
 
 ### Fix
